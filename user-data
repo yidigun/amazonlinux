@@ -1,0 +1,33 @@
+#cloud-config
+#vim:syntax=yaml
+users:
+- default
+- name: dagui
+  gecos: Daekyu Lee
+  groups: [adm, wheel, systemd-journal]
+
+chpasswd:
+  list: |
+    ec2-user:1234
+    dagui:1234
+    root:1234
+
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/80_disable_network_after_firstboot.cfg
+    content: |
+      network:
+        config: disabled
+
+locale: ko_KR
+
+timezone: Asia/Seoul
+
+runcmd:
+- localectl set-locale LANG=ko_KR.utf8
+- echo "LANG=ko_KR.utf8" > /etc/locale.conf
+- echo "LANG=ko_KR.utf8" > /etc/sysconfig/i18n.conf
+- echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+- echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+- sed -i -e /^PasswordAuthentication/s/no/yes/ /etc/ssh/sshd_config
+- systemctl restart sshd
+
