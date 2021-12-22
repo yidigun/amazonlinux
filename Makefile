@@ -53,7 +53,12 @@ qemu: vms/$(DISK_IMG) seed.iso
 
 ssh:
 	if [ -f qemu.pid ]; then \
-	  ssh -p $(SSH_PORT) $(SSH_USER)@127.0.0.1; \
+	  if [ -n "$(CMD)" ]; then \
+	    ssh -p $(SSH_PORT) $(SSH_USER)@127.0.0.1 "$(CMD)"; \
+	  else \
+	    ssh -p $(SSH_PORT) $(SSH_USER)@127.0.0.1; \
+	  fi; \
+	  exit 0; \
 	else \
 	  echo "please run vm \"make qemu\"..."; \
 	  exit 1; \
