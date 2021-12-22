@@ -2,3 +2,4 @@ seed.iso
 build
 dist
 vms
+qemu.pid

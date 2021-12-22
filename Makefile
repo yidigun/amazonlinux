@@ -4,7 +4,7 @@ seed.iso: build/meta-data build/user-data
 	[ -f seed.iso ] && rm -f seed.iso; \
 	case `uname -s` in \
 	  Darwin) hdiutil makehybrid -o seed.iso -hfs -joliet -iso -default-volume-name cidata build;; \
-	  Linux) (cd build; genisoimage -output seed.iso -volid cidata -joliet -rock user-data meta-data);; \
+	  Linux) (cd build; genisoimage -output ../seed.iso -volid cidata -joliet -rock user-data meta-data);; \
 	  *) echo "Unsupported OS: `uname -s`"; \
 	esac
 
@@ -23,10 +23,20 @@ clean:
 
 OS_VER   = 2.0.20211201.0
 DISK_IMG = amzn2-kvm-$(OS_VER)-arm64.xfs.gpt.qcow2
+PORT_FWD = 5555:22 8080 8081 8082
 SSH_PORT = 5555
 SSH_USER = dagui
 
 qemu: vms/$(DISK_IMG) seed.iso
+	hostfwd=; \
+	for p in $(PORT_FWD); do \
+	  hport=`echo $$p | cut -d: -f1`; \
+	  gport=`echo $$p | cut -d: -f2`; \
+	  if [ -z "$$gport" ]; then \
+	    gport=$$hport; \
+	  fi; \
+	  hostfwd="$${hostfwd},hostfwd=tcp:127.0.0.1:$$hport-:$$gport"; \
+	done; \
 	qemu-system-aarch64 \
 	  -cpu cortex-a57 \
 	  -smp 8 \
@@ -36,7 +46,7 @@ qemu: vms/$(DISK_IMG) seed.iso
 	  -device virtio-blk-device,drive=hd0 \
 	  -drive if=none,file=vms/$(DISK_IMG),id=hd0 \
 	  -device virtio-net-pci,netdev=eth0,disable-legacy=on,iommu_platform=on \
-	  -netdev user,id=eth0,hostfwd=tcp:127.0.0.1:$(SSH_PORT)-:22 \
+	  -netdev user,id=eth0$$hostfwd \
 	  -cdrom seed.iso \
 	  -pidfile qemu.pid \
 	  -nographic
