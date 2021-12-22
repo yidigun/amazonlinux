@@ -26,9 +26,7 @@ DISK_IMG = amzn2-kvm-$(OS_VER)-arm64.xfs.gpt.qcow2
 SSH_PORT = 5555
 SSH_USER = dagui
 
-qemu: qemu.pid
-
-qemu.pid: vms/$(DISK_IMG) seed.iso
+qemu: vms/$(DISK_IMG) seed.iso
 	qemu-system-aarch64 \
 	  -cpu cortex-a57 \
 	  -smp 8 \
@@ -40,11 +38,16 @@ qemu.pid: vms/$(DISK_IMG) seed.iso
 	  -device virtio-net-pci,netdev=eth0,disable-legacy=on,iommu_platform=on \
 	  -netdev user,id=eth0,hostfwd=tcp:127.0.0.1:$(SSH_PORT)-:22 \
 	  -cdrom seed.iso \
-	  -pidfile qemu.pid
+	  -pidfile qemu.pid \
 	  -nographic
 
-ssh: qemu.pid
-	ssh -p $(SSH_PORT) -i ssh-key/id_rsa $(SSH_USER)@127.0.0.1
+ssh:
+	if [ -f qemu.pid ]; then \
+	  ssh -p $(SSH_PORT) $(SSH_USER)@127.0.0.1; \
+	else \
+	  echo "please run vm \"make qemu\"..."; \
+	  exit 1; \
+	fi
 
 dist/$(DISK_IMG):
 	mkdir -p dist; \
